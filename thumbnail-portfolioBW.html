@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>designed_by_varun — YouTube Thumbnail Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =============================================
+       TOKENS  (identical to original)
+    ============================================= */
+    :root {
+      --navy:     #0a0f2e;
+      --navy-mid: #12204a;
+      --white:    #ffffff;
+      --black:    #0d0d0d;
+      --gray-1:   #f5f5f3;
+      --gray-2:   #e8e8e4;
+      --gray-3:   #9a9a96;
+      --line:     rgba(10,15,46,0.1);
+
+      --fd: 'Playfair Display', serif;
+      --fb: 'DM Sans', sans-serif;
+      --fm: 'DM Mono', monospace;
+
+      --mw: 1100px;
+      --sp: clamp(64px, 10vw, 112px);
+      --ph: clamp(16px, 5vw, 40px);
+    }
+
+    /* =============================================
+       RESET
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: var(--fb);
+      background: var(--white);
+      color: var(--black);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* subtle grid texture */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(10,15,46,0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(10,15,46,0.022) 1px, transparent 1px);
+      background-size: 56px 56px;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    img { display: block; max-width: 100%; }
+
+    .wrap {
+      max-width: var(--mw);
+      margin: 0 auto;
+      padding: 0 var(--ph);
+      position: relative;
+    }
+
+    /* =============================================
+       SHARED TYPE
+    ============================================= */
+    .mono {
+      font-family: var(--fm);
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gray-3);
+    }
+
+    .section-title {
+      font-family: var(--fd);
+      font-size: clamp(2rem, 5.5vw, 3.8rem);
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--navy);
+    }
+    .section-title em { font-style: italic; font-weight: 400; }
+
+    .divider { width: 100%; height: 1px; background: var(--line); }
+
+    /* =============================================
+       SCROLL REVEAL
+    ============================================= */
+    .r {
+      opacity: 0;
+      transform: translateY(26px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .r.d1 { transition-delay: 0.1s; }
+    .r.d2 { transition-delay: 0.2s; }
+    .r.d3 { transition-delay: 0.3s; }
+    .r.vis { opacity: 1; transform: none; }
+
+    /* =============================================
+       NAVBAR  (identical to original)
+    ============================================= */
+    nav#navbar {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(255,255,255,0.93);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+      transition: box-shadow 0.3s;
+    }
+    nav#navbar.scrolled { box-shadow: 0 2px 20px rgba(10,15,46,0.07); }
+
+    .nav-inner {
+      max-width: var(--mw);
+      margin: 0 auto;
+      padding: 0 var(--ph);
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .nav-brand {
+      font-family: var(--fm);
+      font-size: clamp(0.72rem, 2vw, 0.82rem);
+      letter-spacing: 0.05em;
+      color: var(--navy);
+      font-weight: 500;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .nav-brand span { color: var(--gray-3); }
+
+    .nav-links {
+      display: flex;
+      gap: clamp(20px, 3vw, 32px);
+      list-style: none;
+      align-items: center;
+    }
+    .nav-links a {
+      font-size: 0.8rem; font-weight: 500; letter-spacing: 0.03em;
+      color: var(--black); transition: color 0.2s;
+      position: relative; white-space: nowrap;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute; bottom: -2px; left: 0;
+      width: 0; height: 1px; background: var(--navy);
+      transition: width 0.3s;
+    }
+    .nav-links a:hover { color: var(--navy); }
+    .nav-links a:hover::after { width: 100%; }
+
+    .nav-cta {
+      background: var(--navy); color: var(--white) !important;
+      padding: 7px 16px; border-radius: 2px;
+      font-size: 0.75rem !important; letter-spacing: 0.06em !important;
+    }
+    .nav-cta::after { display: none !important; }
+    .nav-cta:hover { background: var(--navy-mid) !important; }
+
+    .ham {
+      display: none; flex-direction: column; gap: 5px;
+      cursor: pointer; padding: 6px; background: none; border: none; flex-shrink: 0;
+    }
+    .ham span { display: block; width: 22px; height: 1.5px; background: var(--navy); transition: all 0.3s; }
+    .ham.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    .ham.open span:nth-child(2) { opacity: 0; }
+    .ham.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+    .mob-menu {
+      display: none; position: fixed;
+      top: 60px; left: 0; right: 0;
+      background: var(--white); border-bottom: 1px solid var(--line);
+      padding: 16px var(--ph) 24px; z-index: 199;
+      flex-direction: column; gap: 0;
+    }
+    .mob-menu.open { display: flex; }
+    .mob-menu a {
+      font-size: 0.9rem; font-weight: 500; color: var(--black);
+      padding: 13px 0; border-bottom: 1px solid var(--gray-2);
+    }
+    .mob-menu a:last-child { border-bottom: none; }
+
+    /* =============================================
+       HERO  (identical structure + animations)
+    ============================================= */
+    #home {
+      min-height: 100svh; min-height: 100vh;
+      display: flex; align-items: center;
+      position: relative; overflow: hidden;
+      padding: clamp(80px,14vw,120px) var(--ph) clamp(60px,8vw,80px);
+    }
+
+    .hero-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+    .hb-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(10,15,46,0.055); }
+    .hb-r1 {
+      width: clamp(220px,55vw,580px); height: clamp(220px,55vw,580px);
+      right: clamp(-120px,-8vw,-60px); top: 50%; transform: translateY(-50%);
+      animation: spin 44s linear infinite;
+    }
+    .hb-r2 {
+      width: clamp(140px,35vw,370px); height: clamp(140px,35vw,370px);
+      right: clamp(-40px,4vw,60px); top: 50%; transform: translateY(-50%);
+      animation: spin 30s linear infinite reverse;
+    }
+    .hb-r3 {
+      width: clamp(60px,15vw,180px); height: clamp(60px,15vw,180px);
+      right: clamp(60px,18vw,200px); top: 50%; transform: translateY(-50%);
+    }
+    .hb-sq1 {
+      position: absolute; width: 30px; height: 30px;
+      border: 1px solid rgba(10,15,46,0.08); top: 22%; right: 28%;
+      transform: rotate(20deg); animation: floatY 6s ease-in-out infinite;
+    }
+    .hb-sq2 {
+      position: absolute; width: 14px; height: 14px;
+      border: 1px solid rgba(10,15,46,0.09); bottom: 26%; right: 14%;
+      transform: rotate(8deg); animation: floatY 8s ease-in-out infinite 2s;
+    }
+    .hb-lh { position: absolute; width: 90px; height: 1px; background: rgba(10,15,46,0.07); top: 28%; left: 4%; transform: rotate(-12deg); }
+    .hb-lv { position: absolute; width: 1px; height: 72px; background: rgba(10,15,46,0.07); top: 62%; left: 7%; }
+
+    @keyframes spin   { to { transform: translateY(-50%) rotate(360deg); } }
+    @keyframes floatY { 0%,100%{transform:rotate(20deg) translateY(0)} 50%{transform:rotate(20deg) translateY(-10px)} }
+
+    .hero-content { position: relative; z-index: 2; max-width: 640px; width: 100%; }
+
+    .hero-eyebrow {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+      opacity: 0; animation: fadeUp 0.7s ease forwards 0.15s;
+    }
+    .hero-eyebrow .hl { width: 26px; height: 1px; background: var(--navy); flex-shrink: 0; }
+
+    .hero-h1 {
+      font-family: var(--fd);
+      font-size: clamp(2.2rem,8vw,5rem);
+      font-weight: 900; line-height: 1.05; color: var(--navy); margin-bottom: 22px;
+      opacity: 0; animation: fadeUp 0.8s ease forwards 0.32s;
+    }
+    .hero-h1 em { font-style: italic; font-weight: 400; }
+
+    .hero-sub {
+      font-size: clamp(0.88rem,2.5vw,1.04rem);
+      color: var(--gray-3); line-height: 1.65; margin-bottom: 16px;
+      opacity: 0; animation: fadeUp 0.8s ease forwards 0.48s;
+    }
+
+    .typing-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 38px;
+      opacity: 0; animation: fadeUp 0.8s ease forwards 0.6s; flex-wrap: wrap;
+    }
+    .typing-row .tl { font-family: var(--fm); font-size: 0.7rem; color: var(--gray-3); white-space: nowrap; }
+
+    #typer {
+      font-family: var(--fm); font-size: 0.84rem; color: var(--navy); font-weight: 500;
+      border-right: 2px solid var(--navy); padding-right: 3px;
+      white-space: nowrap; min-width: 2px;
+      animation: blink 0.75s step-end infinite;
+    }
+    @keyframes blink { 50% { border-color: transparent; } }
+
+    .hero-btns {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      opacity: 0; animation: fadeUp 0.8s ease forwards 0.72s;
+    }
+
+    .btn-p {
+      background: var(--navy); color: var(--white);
+      padding: 13px clamp(20px,4vw,28px);
+      font-family: var(--fb); font-size: 0.82rem; font-weight: 600; letter-spacing: 0.06em;
+      border: 1.5px solid var(--navy); border-radius: 2px; cursor: pointer; display: inline-block;
+      transition: background 0.25s, transform 0.2s; white-space: nowrap;
+    }
+    .btn-p:hover { background: var(--navy-mid); transform: translateY(-1px); }
+
+    .btn-o {
+      background: transparent; color: var(--navy);
+      padding: 13px clamp(20px,4vw,28px);
+      font-family: var(--fb); font-size: 0.82rem; font-weight: 600; letter-spacing: 0.06em;
+      border: 1.5px solid var(--navy); border-radius: 2px; cursor: pointer; display: inline-block;
+      transition: background 0.25s, color 0.25s, transform 0.2s; white-space: nowrap;
+    }
+    .btn-o:hover { background: var(--navy); color: var(--white); transform: translateY(-1px); }
+
+    .scroll-cue {
+      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      opacity: 0; animation: fadeUp 0.8s ease forwards 1.1s;
+    }
+    .sc-l { font-family: var(--fm); font-size: 0.58rem; letter-spacing: 0.14em; color: var(--gray-3); }
+    .sc-bar { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--gray-3), transparent); animation: pulse 2s ease-in-out infinite; }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:none; } }
+    @keyframes pulse  { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+    /* =============================================
+       ABOUT  (identical layout)
+    ============================================= */
+    #about { background: var(--gray-1); padding: var(--sp) var(--ph); }
+
+    .about-grid {
+      display: grid; grid-template-columns: 1fr 1.05fr;
+      gap: clamp(36px,7vw,88px); align-items: start;
+    }
+    .about-label { display: block; margin-bottom: 18px; }
+
+    .about-bio { margin-top: 26px; display: flex; flex-direction: column; gap: 15px; }
+    .about-bio p { font-size: clamp(0.88rem,2vw,0.98rem); line-height: 1.82; color: #404040; }
+    .about-bio strong { color: var(--navy); font-weight: 600; }
+
+    .about-right { display: flex; flex-direction: column; gap: 36px; padding-top: 2px; }
+
+    .about-block-label { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .abl-line { width: 18px; height: 1px; background: var(--navy); flex-shrink: 0; }
+    .abl-text { font-family: var(--fm); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gray-3); }
+    .about-block p { font-size: clamp(0.86rem,2vw,0.95rem); line-height: 1.77; color: #3a3a3a; }
+
+    .pill-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 6px; }
+    .pill {
+      font-family: var(--fm); font-size: 0.63rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--navy); border: 1px solid rgba(10,15,46,0.2); padding: 6px 12px; border-radius: 1px;
+      transition: background 0.2s, color 0.2s; cursor: default;
+    }
+    .pill:hover { background: var(--navy); color: var(--white); }
+
+    /* =============================================
+       PORTFOLIO — FEW WORKS
+    ============================================= */
+    #portfolio { background: var(--white); padding: var(--sp) 0; }
+
+    .portfolio-wrap { max-width: var(--mw); margin: 0 auto; padding: 0 var(--ph); }
+
+    .portfolio-header { margin-bottom: clamp(36px,6vw,60px); }
+    .portfolio-header .mono { margin-bottom: 14px; display: block; }
+
+    /* Domain block */
+    .domain-block { margin-bottom: clamp(52px,8vw,80px); }
+    .domain-block:last-child { margin-bottom: 0; }
+
+    .domain-row-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 22px;
+    }
+    .domain-title-wrap { display: flex; align-items: center; gap: 14px; }
+
+    /* Geometric marks — same family as niche marks in original */
+    .dm { display: block; flex-shrink: 0; }
+
+    .dm-gaming { width: 26px; height: 18px; border: 1.5px solid var(--navy); position: relative; }
+    .dm-gaming::before { content:''; position:absolute; width:10px; height:2px; background:var(--navy); top:50%; left:50%; transform:translate(-50%,-50%); }
+    .dm-gaming::after  { content:''; position:absolute; width:2px; height:8px; background:var(--navy); top:50%; left:50%; transform:translate(-50%,-50%); }
+
+    .dm-tech { width:28px; height:28px; border:1.5px solid var(--navy); position:relative; }
+    .dm-tech::before { content:''; position:absolute; width:9px; height:9px; background:var(--navy); top:50%; left:50%; transform:translate(-50%,-50%); }
+
+    .dm-finance { width:0; height:0; border-left:13px solid transparent; border-right:13px solid transparent; border-bottom:24px solid var(--navy); }
+
+    .dm-lifestyle { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--navy); position:relative; }
+    .dm-lifestyle::after { content:''; position:absolute; width:10px; height:10px; background:var(--navy); border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); }
+
+    .dm-edu { width:34px; display:flex; flex-direction:column; gap:6px; }
+    .dm-edu i { display:block; height:2px; background:var(--navy); }
+    .dm-edu i:nth-child(1) { width:100%; }
+    .dm-edu i:nth-child(2) { width:54%; }
+
+    .domain-name-text {
+      font-family: var(--fd); font-size: clamp(1rem,2.2vw,1.3rem);
+      font-weight: 700; color: var(--navy); line-height: 1.2;
+    }
+
+    .domain-drag-hint {
+      font-family: var(--fm); font-size: 0.6rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--gray-3);
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+    }
+
+    /* Horizontal scroll */
+    .thumbs-outer { position: relative; }
+    .thumbs-outer::after {
+      content: ''; position: absolute; top:0; right:0; bottom:14px; width:80px;
+      background: linear-gradient(to right, transparent, var(--white));
+      pointer-events: none; z-index: 2;
+    }
+
+    .thumbs-track {
+      display: flex; gap: 16px; overflow-x: auto;
+      padding-bottom: 14px; scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch; cursor: grab;
+    }
+    .thumbs-track:active { cursor: grabbing; }
+    .thumbs-track::-webkit-scrollbar { height: 2px; }
+    .thumbs-track::-webkit-scrollbar-track { background: var(--gray-2); }
+    .thumbs-track::-webkit-scrollbar-thumb { background: var(--navy); }
+
+    /* Thumbnail card */
+    .thumb-card {
+      flex-shrink: 0; width: 288px;
+      background: var(--white); border: 1px solid var(--line);
+      position: relative; overflow: hidden;
+      scroll-snap-align: start; cursor: default;
+      transition: box-shadow 0.3s, transform 0.3s;
+    }
+    .thumb-card::after {
+      content: ''; position: absolute; bottom:0; left:0;
+      width:0; height:2px; background:var(--navy);
+      transition: width 0.4s ease;
+    }
+    .thumb-card:hover { box-shadow: 0 8px 32px rgba(10,15,46,0.1); transform: translateY(-3px); }
+    .thumb-card:hover::after { width: 100%; }
+
+    /* Image area */
+    .thumb-img { width:100%; aspect-ratio:16/9; position:relative; overflow:hidden; }
+    .thumb-img img { width:100%; height:100%; object-fit:cover; display:block; }
+
+    /* Placeholder */
+    .thumb-img.ph { display:flex; align-items:center; justify-content:center; }
+    .thumb-img.ph::before {
+      content:''; position:absolute; inset:0;
+      background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.07) 50%, transparent 62%);
+      background-size: 200% 100%; animation: shimmer 3s infinite; z-index:1;
+    }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    .ph-inner { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:5px; }
+    .ph-inner svg { opacity:0.22; }
+    .ph-label { font-family:var(--fm); font-size:0.56rem; letter-spacing:0.16em; text-transform:uppercase; color:rgba(255,255,255,0.28); }
+
+    /* Domain gradients */
+    .g-gaming-1  { background: linear-gradient(135deg,#160430 0%,#3d0a70 50%,#7a18b0 100%); }
+    .g-gaming-2  { background: linear-gradient(135deg,#0a0a28 0%,#1a1080 50%,#3838c8 100%); }
+    .g-gaming-3  { background: linear-gradient(135deg,#180628 0%,#581060 45%,#b81898 100%); }
+    .g-gaming-4  { background: linear-gradient(135deg,#040420 0%,#0e0a48 50%,#281888 100%); }
+
+    .g-tech-1    { background: linear-gradient(135deg,#041020 0%,#083858 40%,#0e60a8 100%); }
+    .g-tech-2    { background: linear-gradient(135deg,#020c18 0%,#062448 50%,#0c40a0 100%); }
+    .g-tech-3    { background: linear-gradient(135deg,#030f20 0%,#081c48 45%,#1030a8 100%); }
+    .g-tech-4    { background: linear-gradient(135deg,#020a1a 0%,#062040 50%,#0a3080 100%); }
+
+    .g-finance-1 { background: linear-gradient(135deg,#021008 0%,#062018 45%,#0e5828 100%); }
+    .g-finance-2 { background: linear-gradient(135deg,#030f06 0%,#081c10 50%,#124820 100%); }
+    .g-finance-3 { background: linear-gradient(135deg,#021205 0%,#083018 45%,#107838 100%); }
+    .g-finance-4 { background: linear-gradient(135deg,#031005 0%,#072a14 50%,#0d4c1c 100%); }
+
+    .g-lifestyle-1 { background: linear-gradient(135deg,#180408 0%,#3a0814 45%,#980e2c 100%); }
+    .g-lifestyle-2 { background: linear-gradient(135deg,#160308 0%,#421018 50%,#b81438 100%); }
+    .g-lifestyle-3 { background: linear-gradient(135deg,#18040e 0%,#440e22 45%,#8c1448 100%); }
+    .g-lifestyle-4 { background: linear-gradient(135deg,#100206 0%,#340a10 50%,#780c24 100%); }
+
+    .g-edu-1     { background: linear-gradient(135deg,#0a0618 0%,#180e38 45%,#341e88 100%); }
+    .g-edu-2     { background: linear-gradient(135deg,#080520 0%,#140c40 50%,#2418a8 100%); }
+    .g-edu-3     { background: linear-gradient(135deg,#090618 0%,#1a0e3a 45%,#3a26a0 100%); }
+    .g-edu-4     { background: linear-gradient(135deg,#06041a 0%,#100a38 50%,#281a9c 100%); }
+
+    .thumb-meta { padding: 14px 16px 16px; }
+    .thumb-meta-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+    .thumb-idx  { font-family:var(--fm); font-size:0.58rem; letter-spacing:0.14em; color:var(--gray-3); }
+    .thumb-domain-tag {
+      font-family:var(--fm); font-size:0.56rem; letter-spacing:0.1em; text-transform:uppercase;
+      color:var(--navy); border:1px solid rgba(10,15,46,0.18); padding:3px 8px; border-radius:1px;
+    }
+    .thumb-title { font-family:var(--fd); font-size:0.88rem; font-weight:700; color:var(--navy); line-height:1.35; }
+
+    /* =============================================
+       CONTACT  (identical to original)
+    ============================================= */
+    #contact {
+      background: var(--navy);
+      padding: clamp(72px,12vw,136px) var(--ph);
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .contact-rings { position:absolute; inset:0; pointer-events:none; }
+    .cr { position:absolute; border-radius:50%; border:1px solid rgba(255,255,255,0.04); top:50%; left:50%; transform:translate(-50%,-50%); }
+    .cr1 { width:min(460px,90vw);  height:min(460px,90vw);  }
+    .cr2 { width:min(700px,130vw); height:min(700px,130vw); }
+    .cr3 { width:min(940px,170vw); height:min(940px,170vw); }
+
+    .contact-inner { position:relative; z-index:2; max-width:560px; margin:0 auto; }
+    .contact-inner .mono { color:rgba(255,255,255,0.3); margin-bottom:18px; display:block; }
+
+    .contact-h2 {
+      font-family:var(--fd); font-size:clamp(1.7rem,5.5vw,3.1rem);
+      font-weight:700; color:var(--white); line-height:1.18; margin-bottom:18px;
+    }
+    .contact-h2 em { font-style:italic; font-weight:400; }
+
+    .contact-sub {
+      font-size:clamp(0.86rem,2vw,0.98rem);
+      color:rgba(255,255,255,0.46); line-height:1.72; margin-bottom:40px;
+    }
+
+    .contact-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+    .btn-w {
+      background:var(--white); color:var(--navy);
+      padding:14px clamp(22px,5vw,38px);
+      font-family:var(--fb); font-size:0.84rem; font-weight:700; letter-spacing:0.06em;
+      border-radius:2px; display:inline-block;
+      transition:background 0.25s, transform 0.2s; white-space:nowrap;
+    }
+    .btn-w:hover { background:var(--gray-2); transform:translateY(-2px); }
+
+    .btn-wo {
+      background:transparent; color:var(--white);
+      padding:14px clamp(22px,5vw,38px);
+      font-family:var(--fb); font-size:0.84rem; font-weight:700; letter-spacing:0.06em;
+      border:1.5px solid rgba(255,255,255,0.25); border-radius:2px; display:inline-block;
+      transition:border-color 0.25s, background 0.25s, transform 0.2s; white-space:nowrap;
+    }
+    .btn-wo:hover { border-color:rgba(255,255,255,0.6); background:rgba(255,255,255,0.06); transform:translateY(-2px); }
+
+    .contact-handle { margin-top:26px; font-family:var(--fm); font-size:0.68rem; color:rgba(255,255,255,0.18); letter-spacing:0.1em; }
+
+    /* =============================================
+       FOOTER  (identical)
+    ============================================= */
+    footer { background:#06091e; padding:26px var(--ph); text-align:center; }
+    footer p { font-family:var(--fm); font-size:0.66rem; color:rgba(255,255,255,0.17); letter-spacing:0.07em; }
+
+    /* =============================================
+       RESPONSIVE
+    ============================================= */
+    @media (max-width: 860px) {
+      .nav-links { display:none; }
+      .ham { display:flex; }
+      .about-grid { grid-template-columns:1fr; gap:40px; }
+    }
+    @media (max-width: 540px) {
+      .hero-btns { flex-direction:column; }
+      .btn-p, .btn-o { text-align:center; }
+      .scroll-cue { display:none; }
+      .hb-r1,.hb-r2,.hb-r3 { opacity:0.35; }
+      .thumb-card { width:250px; }
+      .domain-drag-hint { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =============================================
+       NAVBAR
+  ============================================= -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <div class="nav-brand"><span>@</span>designed_by_varun</div>
+      <ul class="nav-links">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#portfolio">Work</a></li>
+        <li><a href="#contact" class="nav-cta">Hire Me</a></li>
+      </ul>
+      <button class="ham" id="ham" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <nav class="mob-menu" id="mob-menu">
+    <a href="#home"      class="ml">Home</a>
+    <a href="#about"     class="ml">About</a>
+    <a href="#portfolio" class="ml">Work</a>
+    <a href="#contact"   class="ml">Hire Me</a>
+  </nav>
+
+  <!-- =============================================
+       HERO
+  ============================================= -->
+  <section id="home">
+    <div class="hero-bg" aria-hidden="true">
+      <div class="hb-ring hb-r1"></div>
+      <div class="hb-ring hb-r2"></div>
+      <div class="hb-ring hb-r3"></div>
+      <div class="hb-sq1"></div>
+      <div class="hb-sq2"></div>
+      <div class="hb-lh"></div>
+      <div class="hb-lv"></div>
+    </div>
+
+    <div class="wrap">
+      <div class="hero-content">
+
+        <div class="hero-eyebrow">
+          <div class="hl"></div>
+          <span class="mono" style="color:var(--navy);opacity:.5;">YouTube Thumbnail Designer</span>
+        </div>
+
+        <h1 class="hero-h1">
+          Thumbnails That<br>
+          Force the<br>
+          <em>Click.</em>
+        </h1>
+
+        <p class="hero-sub">
+          High-CTR thumbnail design for YouTube creators across gaming, tech, finance, lifestyle &amp; education.
+        </p>
+
+        <div class="typing-row">
+          <span class="tl">Specialising in —</span>
+          <span id="typer"></span>
+        </div>
+
+        <div class="hero-btns">
+          <a href="#portfolio" class="btn-p">View My Work</a>
+          <a href="#contact"   class="btn-o">Get in Touch</a>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="scroll-cue" aria-hidden="true">
+      <span class="sc-l">Scroll</span>
+      <div class="sc-bar"></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- =============================================
+       ABOUT
+  ============================================= -->
+  <section id="about">
+    <div class="wrap">
+      <div class="about-grid">
+
+        <div>
+          <span class="mono about-label">About</span>
+          <h2 class="section-title r">
+            The Designer<br>Behind the <em>Click</em>
+          </h2>
+          <div class="about-bio r d1">
+            <p>
+              I am <strong>Varun</strong> — a YouTube thumbnail designer who turns scroll-past moments into click-through conversions. I craft <strong>high-CTR thumbnails</strong> built around visual psychology, bold typography, and colour theory.
+            </p>
+            <p>
+              My process starts with understanding your video's core promise — then designing a thumbnail that communicates it in under <strong>two seconds of glance time</strong>. Every element earns its place on the canvas.
+            </p>
+            <p>
+              No stock-template thinking. No cluttered compositions. Just <strong>clean, intentional visuals</strong> that work with the YouTube algorithm and your audience's psychology.
+            </p>
+          </div>
+        </div>
+
+        <div class="about-right">
+
+          <div class="about-block r d1">
+            <div class="about-block-label">
+              <div class="abl-line"></div>
+              <span class="abl-text">What I Do</span>
+            </div>
+            <p>I design custom YouTube thumbnails — from concept to final file — engineered to maximise click-through rate across gaming, tech, finance, lifestyle, and educational channels.</p>
+          </div>
+
+          <div class="about-block r d2">
+            <div class="about-block-label">
+              <div class="abl-line"></div>
+              <span class="abl-text">How I Do It</span>
+            </div>
+            <p>Visual hierarchy first, always. I study what performs in your niche, identify the visual gap, and design a thumbnail that stands out in a crowded feed while staying native to your brand.</p>
+          </div>
+
+          <div class="about-block r d3">
+            <div class="about-block-label">
+              <div class="abl-line"></div>
+              <span class="abl-text">Tools I Use</span>
+            </div>
+            <div class="pill-row">
+              <span class="pill">Photoshop</span>
+              <span class="pill">Illustrator</span>
+              <span class="pill">Canva Pro</span>
+              <span class="pill">Figma</span>
+              <span class="pill">Lightroom</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- =============================================
+       PORTFOLIO — FEW WORKS
+  ============================================= -->
+  <section id="portfolio">
+    <div class="portfolio-wrap">
+
+      <div class="portfolio-header r">
+        <span class="mono">Few Works</span>
+        <h2 class="section-title" style="margin-top:14px;">
+          Thumbnails by <em>Domain</em>
+        </h2>
+      </div>
+
+      <!-- ── GAMING ── -->
+      <div class="domain-block r">
+        <div class="domain-row-header">
+          <div class="domain-title-wrap">
+            <span class="dm dm-gaming"></span>
+            <div class="domain-name-text">Gaming</div>
+          </div>
+          <div class="domain-drag-hint">← drag to explore →</div>
+        </div>
+        <div class="thumbs-outer">
+          <div class="thumbs-track" data-drag>
+
+            <div class="thumb-card">
+              <!-- Replace placeholder: <div class="thumb-img"><img src="gaming/01.jpg" alt="..."></div> -->
+              <div class="thumb-img ph g-gaming-1">
+                <div class="ph-inner">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  <span class="ph-label">Your Image</span>
+                </div>
+              </div>
+              <div class="thumb-meta">
+                <div class="thumb-meta-top"><span class="thumb-idx">GM — 01</span><span class="thumb-domain-tag">Gaming</span></div>
+                <div class="thumb-title">Add your thumbnail title here</div>
+              </div>
+            </div>
+
+            <div class="thumb-card">
+              <div class="thumb-img ph g-gaming-2">
+                <div class="ph-inner">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  <span class="ph-label">Your Image</span>
+                </div>
+              </div>
+              <div class="thumb-meta">
+                <div class="thumb-meta-top"><span class="thumb-idx">GM — 02</span><span class="thumb-domain-tag">Gaming</span></div>
+                <div class="thumb-title">Add your thumbnail title here</div>
+              </div>
+            </div>
+
+            <div class="thumb-card">
+              <div class="thumb-img ph g-gaming-3">
+                <div class="ph-inner">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  <span class="ph-label">Your Image</span>
+                </div>
+              </div>
+              <div class="thumb-meta">
+                <div class="thumb-meta-top"><span class="thumb-idx">GM — 03</span><span class="thumb-domain-tag">Gaming</span></div>
+                <div class="thumb-title">Add your thumbnail title here</div>
+              </div>
+            </div>
+
+            <div class="thumb-card">
+              <div class="thumb-img ph g-gaming-4">
+                <div class="ph-inner">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  <span class="ph-label">Your Image</span>
+                </div>
+              </div>
+              <div class="thumb-meta">
+                <div class="thumb-meta-top"><span class="thumb-idx">GM — 04</span><span class="thumb-domain-tag">Gaming</span></div>
+                <div class="thumb-title">Add your thumbnail title here</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="divider" style="margin-bottom:clamp(52px,8vw,80px)"></div>
+
+      <!-- ── TECH & AI ── -->
+      <div class="domain-block r">
+        <div class="domain-row-header">
+          <div class="domain-title-wrap">
+            <span class="dm dm-tech"></span>
+            <div class="domain-name-text">Tech &amp; AI</div>
+          </div>
+          <div class="domain-drag-hint">← drag to explore →</div>
+        </div>
+        <div class="thumbs-outer">
+          <div class="thumbs-track" data-drag>
+
+            <div class="thumb-card">
+              <div class="thumb-img ph g-tech-1">
+                <div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div>
+              </div>
+              <div class="thumb-meta">
+                <div class="thumb-meta-top"><span class="thumb-idx">TC — 01</span><span class="thumb-domain-tag">Tech</span></div>
+                <div class="thumb-title">Add your thumbnail title here</div>
+              </div>
+            </div>
+
+            <div class="thumb-card">
+              <div class="thumb-img ph g-tech-2">
+                <div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div>
+              </div>
+              <div class="thumb-meta">
+                <div class="thumb-meta-top"><span class="thumb-idx">TC — 02</span><span class="thumb-domain-tag">Tech</span></div>
+                <div class="thumb-title">Add your thumbnail title here</div>
+              </div>
+            </div>
+
+            <div class="thumb-card">
+              <div class="thumb-img ph g-tech-3">
+                <div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div>
+              </div>
+              <div class="thumb-meta">
+                <div class="thumb-meta-top"><span class="thumb-idx">TC — 03</span><span class="thumb-domain-tag">Tech</span></div>
+                <div class="thumb-title">Add your thumbnail title here</div>
+              </div>
+            </div>
+
+            <div class="thumb-card">
+              <div class="thumb-img ph g-tech-4">
+                <div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div>
+              </div>
+              <div class="thumb-meta">
+                <div class="thumb-meta-top"><span class="thumb-idx">TC — 04</span><span class="thumb-domain-tag">Tech</span></div>
+                <div class="thumb-title">Add your thumbnail title here</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="divider" style="margin-bottom:clamp(52px,8vw,80px)"></div>
+
+      <!-- ── FINANCE ── -->
+      <div class="domain-block r">
+        <div class="domain-row-header">
+          <div class="domain-title-wrap">
+            <span class="dm dm-finance"></span>
+            <div class="domain-name-text">Finance &amp; Business</div>
+          </div>
+          <div class="domain-drag-hint">← drag to explore →</div>
+        </div>
+        <div class="thumbs-outer">
+          <div class="thumbs-track" data-drag>
+
+            <div class="thumb-card">
+              <div class="thumb-img ph g-finance-1"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">FN — 01</span><span class="thumb-domain-tag">Finance</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+            <div class="thumb-card">
+              <div class="thumb-img ph g-finance-2"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">FN — 02</span><span class="thumb-domain-tag">Finance</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+            <div class="thumb-card">
+              <div class="thumb-img ph g-finance-3"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">FN — 03</span><span class="thumb-domain-tag">Finance</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+            <div class="thumb-card">
+              <div class="thumb-img ph g-finance-4"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">FN — 04</span><span class="thumb-domain-tag">Finance</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="divider" style="margin-bottom:clamp(52px,8vw,80px)"></div>
+
+      <!-- ── LIFESTYLE ── -->
+      <div class="domain-block r">
+        <div class="domain-row-header">
+          <div class="domain-title-wrap">
+            <span class="dm dm-lifestyle"></span>
+            <div class="domain-name-text">Lifestyle &amp; Motivation</div>
+          </div>
+          <div class="domain-drag-hint">← drag to explore →</div>
+        </div>
+        <div class="thumbs-outer">
+          <div class="thumbs-track" data-drag>
+
+            <div class="thumb-card">
+              <div class="thumb-img ph g-lifestyle-1"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">LS — 01</span><span class="thumb-domain-tag">Lifestyle</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+            <div class="thumb-card">
+              <div class="thumb-img ph g-lifestyle-2"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">LS — 02</span><span class="thumb-domain-tag">Lifestyle</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+            <div class="thumb-card">
+              <div class="thumb-img ph g-lifestyle-3"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">LS — 03</span><span class="thumb-domain-tag">Lifestyle</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+            <div class="thumb-card">
+              <div class="thumb-img ph g-lifestyle-4"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">LS — 04</span><span class="thumb-domain-tag">Lifestyle</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="divider" style="margin-bottom:clamp(52px,8vw,80px)"></div>
+
+      <!-- ── EDUCATIONAL ── -->
+      <div class="domain-block r">
+        <div class="domain-row-header">
+          <div class="domain-title-wrap">
+            <span class="dm dm-edu"><i></i><i></i></span>
+            <div class="domain-name-text">Educational</div>
+          </div>
+          <div class="domain-drag-hint">← drag to explore →</div>
+        </div>
+        <div class="thumbs-outer">
+          <div class="thumbs-track" data-drag>
+
+            <div class="thumb-card">
+              <div class="thumb-img ph g-edu-1"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">ED — 01</span><span class="thumb-domain-tag">Education</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+            <div class="thumb-card">
+              <div class="thumb-img ph g-edu-2"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">ED — 02</span><span class="thumb-domain-tag">Education</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+            <div class="thumb-card">
+              <div class="thumb-img ph g-edu-3"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">ED — 03</span><span class="thumb-domain-tag">Education</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+            <div class="thumb-card">
+              <div class="thumb-img ph g-edu-4"><div class="ph-inner"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="ph-label">Your Image</span></div></div>
+              <div class="thumb-meta"><div class="thumb-meta-top"><span class="thumb-idx">ED — 04</span><span class="thumb-domain-tag">Education</span></div><div class="thumb-title">Add your thumbnail title here</div></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- =============================================
+       CONTACT
+  ============================================= -->
+  <section id="contact">
+    <div class="contact-rings" aria-hidden="true">
+      <div class="cr cr1"></div>
+      <div class="cr cr2"></div>
+      <div class="cr cr3"></div>
+    </div>
+
+    <div class="contact-inner r">
+      <span class="mono">Get in Touch</span>
+      <h2 class="contact-h2">
+        Ready to Boost<br>Your <em>CTR?</em>
+      </h2>
+      <p class="contact-sub">
+        DM me on Instagram or send an email — I will get back to you within 24 hours. Let's build thumbnails that don't just look good, they get clicked.
+      </p>
+      <div class="contact-btns">
+        <a href="https://www.instagram.com/designed_by_varun" target="_blank" rel="noopener" class="btn-w">
+          Message on Instagram
+        </a>
+        <a href="mailto:youremail@example.com" class="btn-wo">
+          Send an Email
+        </a>
+      </div>
+      <div class="contact-handle">instagram.com/designed_by_varun</div>
+    </div>
+  </section>
+
+  <!-- =============================================
+       FOOTER
+  ============================================= -->
+  <footer>
+    <p>&copy; 2025 designed_by_varun &nbsp;&mdash;&nbsp; YouTube Thumbnail Designer</p>
+  </footer>
+
+  <!-- =============================================
+       JAVASCRIPT
+  ============================================= -->
+  <script>
+    /* Navbar */
+    const nb = document.getElementById('navbar');
+    window.addEventListener('scroll', () => { nb.classList.toggle('scrolled', window.scrollY > 16); }, { passive:true });
+
+    /* Hamburger */
+    const ham = document.getElementById('ham');
+    const mob = document.getElementById('mob-menu');
+    ham.addEventListener('click', () => { ham.classList.toggle('open'); mob.classList.toggle('open'); });
+    document.querySelectorAll('.ml').forEach(l => l.addEventListener('click', () => { ham.classList.remove('open'); mob.classList.remove('open'); }));
+
+    /* Typing */
+    const words = ['CTR Optimisation', 'Visual Psychology', 'Click-Through Design'];
+    let wi=0, ci=0, del=false;
+    const typer = document.getElementById('typer');
+    function tick() {
+      const w = words[wi];
+      typer.textContent = del ? w.slice(0,--ci) : w.slice(0,++ci);
+      if (!del && ci===w.length) { del=true; setTimeout(tick,1800); return; }
+      if (del && ci===0) { del=false; wi=(wi+1)%words.length; }
+      setTimeout(tick, del?55:88);
+    }
+    setTimeout(tick, 1000);
+
+    /* Scroll reveal */
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vis'); obs.unobserve(e.target); } });
+    }, { threshold:0.08, rootMargin:'0px 0px -32px 0px' });
+    document.querySelectorAll('.r').forEach(el => obs.observe(el));
+
+    /* Smooth scroll */
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        const t = document.querySelector(a.getAttribute('href'));
+        if (t) { e.preventDefault(); t.scrollIntoView({ behavior:'smooth', block:'start' }); }
+      });
+    });
+
+    /* Drag-to-scroll */
+    document.querySelectorAll('[data-drag]').forEach(track => {
+      let isDown=false, startX, scrollLeft;
+      track.addEventListener('mousedown', e => { isDown=true; startX=e.pageX-track.offsetLeft; scrollLeft=track.scrollLeft; });
+      track.addEventListener('mouseleave',  ()  => { isDown=false; });
+      track.addEventListener('mouseup',     ()  => { isDown=false; });
+      track.addEventListener('mousemove', e => {
+        if (!isDown) return; e.preventDefault();
+        track.scrollLeft = scrollLeft - (e.pageX-track.offsetLeft-startX)*1.5;
+      });
+      let tX=0, tS=0;
+      track.addEventListener('touchstart', e => { tX=e.touches[0].pageX; tS=track.scrollLeft; }, {passive:true});
+      track.addEventListener('touchmove',  e => { track.scrollLeft = tS+(tX-e.touches[0].pageX); }, {passive:true});
+    });
+  </script>
+
+</body>
+</html>
